@@ -1,17 +1,9 @@
-from HashGrid2D import HashGrid2D
-import torch
-from MLP import NeRFMLP
+import Trainer
 
-grid = HashGrid2D()
-mlp = NeRFMLP(input_dim=2 + 4)
+trainer = Trainer.Trainer2D("../data/images/lincoln.jpg")
 
-position = (1.3, 2.7)
-position_tensor = torch.tensor(position)
+trainer.initialize_trainer()
 
-feature = grid.lookup(position)
+trainer.train(250)
 
-input_tensor = torch.cat([position_tensor, feature], dim=0)
-
-output = mlp(input_tensor)
-
-print("Output:", output)
+trainer.reconstruct_image()

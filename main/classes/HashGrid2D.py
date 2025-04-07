@@ -30,6 +30,9 @@ class HashGrid2D(nn.Module):
             self.grid[index] = nn.Parameter(torch.randn(self.dimensions) * 1e-2)
         return self.grid[index]
 
+    def forward(self, position):
+        return self.lookup(position)
+
     def quantize(self, position : Tuple[float, float]):
         ix = int(math.floor(position[0] / self.cell_size))
         iy = int(math.floor(position[1] / self.cell_size))

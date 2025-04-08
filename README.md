@@ -3,17 +3,12 @@
 A prototype I made to learn Instant-NGP pipelines.
 This consists of:
 
- - How and why hash grids are used
- - What is hash collision and how is it mitigated
- - Memory benefits and tradeoffs between various data structures (voxel grids vs hash grids vs 
- - How hash grid parameters influence the details they capture (hash size, cell size and dimensions)
- - What are feature vectors and why are they used
- - How can multiple hash grids of different sizes be combined into a multi resolution one
- - How images are vectorized to improve the performance of the MLP
- - MLP network design for NeRF + hash grids
- - Specific application of various loss functions (MSE, L1, AMP etc.)
- - What is interpolation and different variations (bilinear, bicubic, NN etc.)
+ - Simple hash grid implementation with adjustable parameters (hash size, cell size, dimensions) and hashing
+ - Image pre processing that essentially flattens images into a vector so they can be used by the MLP for backpropagation and splits them in batches
+ - Very basic 3 layer MLP 
+ - A multi res hash grid that cambines multiple hash grids of various configurations based on the passed layout
+ - A trainer that combines the implementations from above, compares the predicted feature vectors with the passed image, trains for a given number of iterations and reconstructs the image
+   
+The learning processes and some code segments were facilitated by ChatGPT.
 
-The learning processes and code portions were facilitated by ChatGPT.
-
-Moving to a C++/CUDA implementation due to performance limitations of PyTorch in real time rendering and training.
+Moving to a C++/CUDA implementation due to the performance limitations of PyTorch in real time rendering and training.

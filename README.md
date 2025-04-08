@@ -15,3 +15,5 @@ This consists of:
  - What is interpolation and different variations (bilinear, bicubic, NN etc.)
 
 The learning processes and code portions were facilitated by ChatGPT.
+
+Moving to a C++/CUDA implementation due to performance limitations of PyTorch in real time rendering and training.

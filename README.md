@@ -1,4 +1,5 @@
-# NeRF-like reconstruction of 2D images
+# NeRF-like reconstruction Prototype of 2D images (Work in progress)
+
 
 A prototype I made to learn Instant-NGP pipelines.
 This consists of:
@@ -10,5 +11,3 @@ This consists of:
  - A trainer that combines the implementations from above, compares the predicted feature vectors with the passed image, trains for a given number of iterations and reconstructs the image
    
 The learning processes and some code segments were facilitated by ChatGPT.
-
-Moving to a C++/CUDA implementation due to the performance limitations of PyTorch in real time rendering and training.

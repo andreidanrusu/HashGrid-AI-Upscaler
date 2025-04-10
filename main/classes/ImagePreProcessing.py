@@ -35,7 +35,6 @@ class ImagePP:
         nr_of_values = self.coordinates.shape[0]
         nr_of_batches = int(np.ceil( nr_of_values / self.batch_size))
         batches = []
-        print(nr_of_batches)
         for i in range(nr_of_batches):
             start = i * self.batch_size
             end = min((i + 1) * self.batch_size, nr_of_values)

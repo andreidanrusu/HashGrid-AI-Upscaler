@@ -18,18 +18,19 @@ class MRHG2D(nn.Module):
             for size, cell, dim in layout
         ])
         self.dimensions = sum(dim for _, _, dim in layout)
-        self.level_weights = nn.Parameter(0.9 * torch.rand(len(layout)) + 0.1)
+        self.level_weights = nn.Parameter(torch.rand(len(layout)))
 
     def get_dimensions(self):
         return self.dimensions
 
     def forward(self, positions):
+        norm_weights = F.softmax(self.level_weights, dim=0)
+
         features = []
 
         for i, (sdhg, (_, _, dim)) in enumerate(zip(self.grids, self.layout)):
-            feat = sdhg.batch_lookup(positions)
-            norm_feat = F.layer_norm(feat, (dim,))
-            scaled_feat = self.level_weights[i] * norm_feat
+            norm_feat = sdhg.forward(positions)
+            scaled_feat = norm_weights[i] * norm_feat
             features.append(scaled_feat)
 
         return torch.cat(features, dim=1)

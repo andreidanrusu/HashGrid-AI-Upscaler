@@ -11,9 +11,7 @@ from MultiResHG2D import MRHG2D
 import torch.optim as optim
 
 torch.set_float32_matmul_precision('high')
-# Balanced grid layout [(12, 16.0, 2), (13, 8.0, 4), (14, 4.0, 12), (16,1.0, 12)]
-
-
+# Balanced grid layout [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8)]
 
 class Trainer2D:
 
@@ -73,12 +71,11 @@ class Trainer2D:
         img_np = output.cpu().numpy().reshape(H, W, 3)
         img = (img_np * 255).astype(np.uint8)
         image = Image.fromarray(img)
-        image_bicubic = image.resize((W, H), resample=Image.Resampling.BICUBIC)
 
         if save_path:
             image.save(save_path)
         else:
-            plt.imshow(image_bicubic)
+            plt.imshow(image)
             plt.title("Reconstructed Image")
             plt.axis("off")
             plt.show()

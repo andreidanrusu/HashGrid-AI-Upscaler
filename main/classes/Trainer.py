@@ -11,14 +11,18 @@ from MultiResHG2D import MRHG2D
 import torch.optim as optim
 
 torch.set_float32_matmul_precision('high')
-# Balanced grid layout [(12, 16.0, 2), (14, 4.0, 8), (16,1.0, 16), (18, 0.125, 8)] - Fails with high detail pictures
+# Balanced grid layout [(12, 16.0, 2), (13, 8.0, 4), (14, 4.0, 12), (16,1.0, 12)]
+
+
 
 class Trainer2D:
 
-    def __init__(self, path : str, batch_size = 256):
+    def __init__(self, path : str, batch_size = 256, layout=None):
+        if layout is None:
+            layout = [(12, 16, 4)]
         self.scaler = GradScaler()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.grid = MRHG2D(layout=[(12, 16.0, 2), (12, 8.0, 4), (12, 1.0, 16), (14, 0.25, 16), (14, 0.125, 6)])
+        self.grid = MRHG2D(layout=layout)
         self.grid = self.grid.to(self.device)
         self.mlp = NeRFMLP(input_dim=2 + self.grid.get_dimensions(), hidden_dim=64)
         self.mlp = self.mlp.to(self.device)
@@ -32,6 +36,7 @@ class Trainer2D:
             (pos_tensor.to(self.device), color_tensor.to(self.device))
             for pos_tensor, color_tensor in self.batches
         ]
+
 
     def epoch_iterations(self):
         for pos_tensor, color_tensor in self.batches:

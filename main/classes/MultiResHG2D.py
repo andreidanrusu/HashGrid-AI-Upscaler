@@ -18,12 +18,11 @@ class MRHG2D(nn.Module):
             for size, cell, dim in layout
         ])
         self.dimensions = sum(dim for _, _, dim in layout)
-        self.level_weights = nn.Parameter(torch.ones(len(layout)))
+        self.level_weights = nn.Parameter(0.9 * torch.rand(len(layout)) + 0.1)
 
     def get_dimensions(self):
         return self.dimensions
 
-    @torch.compile
     def forward(self, positions):
         features = []
 

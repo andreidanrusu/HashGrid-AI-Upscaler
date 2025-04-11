@@ -1,5 +1,4 @@
 import torch.nn as nn
-import HashGrid2D
 
 class NeRFMLP(nn.Module):
 

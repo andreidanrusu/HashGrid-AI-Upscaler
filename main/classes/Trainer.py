@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import torch
 from PIL import Image
@@ -11,13 +12,14 @@ from MultiResHG2D import MRHG2D
 import torch.optim as optim
 
 torch.set_float32_matmul_precision('high')
-# Balanced grid layout [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8)]
+# Balanced grid layout [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8), (16,0.25, 6)]
 
 class Trainer2D:
 
     def __init__(self, path : str, batch_size = 256, layout=None):
         if layout is None:
-            layout = [(12, 16, 4)]
+            layout = [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8)]
+
         self.scaler = GradScaler()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.grid = MRHG2D(layout=layout)
@@ -38,7 +40,7 @@ class Trainer2D:
 
     def epoch_iterations(self):
         for pos_tensor, color_tensor in self.batches:
-            with autocast(device_type='cuda'):
+            with autocast(device_type='cuda', dtype=torch.float16):
                 features = self.grid(pos_tensor)
                 mlp_input = torch.cat([pos_tensor, features], dim=1)
                 output = self.mlp(mlp_input)
@@ -50,32 +52,40 @@ class Trainer2D:
             self.optimizer.zero_grad()
 
 
-    def train(self, epoch = 500):
+    def train(self, epoch = 100):
+        start = time.time()
+        print("Training started...")
         for epoch in range(epoch):
             print(f"Epoch {epoch + 1}")
             self.epoch_iterations()
+        end = time.time() - start
+        print(f"{epoch} epochs completed in {end:.2f} seconds.")
 
+    def reconstruct_image(self, samples=4, save_path=None):
 
-
-    def reconstruct_image(self, save_path=None):
         H, W = self.image_shape
 
         coords = np.stack(np.meshgrid(np.arange(W), np.arange(H)), axis=-1).reshape(-1, 2)
         pos_tensor = torch.tensor(coords, dtype=torch.float32).to(self.device)
 
         with torch.no_grad():
-            features = self.grid(pos_tensor)  # MRHG2D forward()
+            features = self.grid(pos_tensor)
             mlp_input = torch.cat([pos_tensor, features], dim=1)
-            output = self.mlp(mlp_input)[:, :3].clamp(0.0, 1.0)  # RGB only
+            output = self.mlp(mlp_input)[:, :3].clamp(0.0, 1.0)
 
         img_np = output.cpu().numpy().reshape(H, W, 3)
         img = (img_np * 255).astype(np.uint8)
         image = Image.fromarray(img)
 
+        if samples > 1:
+            upscale_size = (W * samples, H * samples)
+            image = image.resize(upscale_size, resample=Image.Resampling.BICUBIC)
+
         if save_path:
             image.save(save_path)
+            print(f"Saved bicubic-upscaled image to: {save_path}")
         else:
             plt.imshow(image)
-            plt.title("Reconstructed Image")
+            plt.title(f"Bicubic Upscaled ×{samples}")
             plt.axis("off")
             plt.show()

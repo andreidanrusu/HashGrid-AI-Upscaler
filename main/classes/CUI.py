@@ -14,10 +14,12 @@ class ConsoleInterface:
     def __init__(self, path = "../data/images/"):
         self.path = path
         self.epochs = 0
+
         self.running = True
         self.trainer = None
         self.is_trainer_initialized = False
         self.DEFAULT_LAYOUT = [(14, 8.0, 4), (16, 2.0, 8), (18, 0.5, 8), (18, 0.125, 4)]
+        self.layout = self.DEFAULT_LAYOUT
 
     def run(self):
         while self.running:
@@ -129,6 +131,8 @@ class ConsoleInterface:
 
         layout = self.get_layout()
         self.layout = layout
+
+
         self.assign_trainer(path, batch_size, layout)
         print(layout)
 

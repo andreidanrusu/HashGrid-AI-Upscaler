@@ -21,7 +21,9 @@ class Trainer2D:
             layout = [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8)]
 
         self.scaler = GradScaler()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else
+                "mps" if torch.backends.mps.is_available() else
+                "cpu")
         self.grid = MRHG2D(layout=layout)
         self.grid = self.grid.to(self.device)
         self.mlp = NeRFMLP(input_dim=2 + self.grid.get_dimensions(), hidden_dim=64)

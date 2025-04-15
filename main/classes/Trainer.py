@@ -5,13 +5,14 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from torch.amp import autocast, GradScaler
 
+
 from ImagePreProcessing import ImagePP
 from MLP import NeRFMLP
 from MultiResHG2D import MRHG2D
 
 import torch.optim as optim
 
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision('medium')
 # Balanced grid layout [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8), (16,0.25, 6)]
 
 class Trainer2D:
@@ -39,20 +40,25 @@ class Trainer2D:
             for pos_tensor, color_tensor in self.batches
         ]
 
+    def compute_loss(self, pos_tensor, color_tensor):
+        features = self.grid(pos_tensor)
+        mlp_input = torch.cat([pos_tensor, features], dim=1)
+        output = self.mlp(mlp_input)
+        loss = torch.nn.functional.l1_loss(output[:, :3], color_tensor)
+        return loss
 
     def epoch_iterations(self):
         for pos_tensor, color_tensor in self.batches:
-            with autocast(device_type='cuda', dtype=torch.float16):
-                features = self.grid(pos_tensor)
-                mlp_input = torch.cat([pos_tensor, features], dim=1)
-                output = self.mlp(mlp_input)
-                loss = torch.nn.functional.l1_loss(output[:, :3], color_tensor)
+            if self.device.type == "cuda":
+                with autocast(device_type="cuda", dtype=torch.float16):
+                    loss = self.compute_loss(pos_tensor, color_tensor)
+            else:
+                loss = self.compute_loss(pos_tensor, color_tensor)
 
             self.scaler.scale(loss).backward()
             self.scaler.step(self.optimizer)
             self.scaler.update()
             self.optimizer.zero_grad()
-
 
     def train(self, epoch = 100):
         start = time.time()

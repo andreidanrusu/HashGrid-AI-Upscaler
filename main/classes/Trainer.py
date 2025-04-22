@@ -12,6 +12,7 @@ from MultiResHG2D import MRHG2D
 
 import torch.optim as optim
 
+#Sets the matrix multiplication precision. Options are: medium, high, highest. Lower precision = higher computational speed
 torch.set_float32_matmul_precision('medium')
 # Balanced grid layout [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8), (16,0.25, 6)]
 
@@ -21,7 +22,7 @@ class Trainer2D:
         if layout is None:
             layout = [(14, 8.0, 4), (16, 2.0, 8),(18, 0.5, 8)]
 
-        self.scaler = GradScaler()
+        self.scaler = torch.amp.GradScaler()
         self.device = torch.device("cuda" if torch.cuda.is_available() else
                 "mps" if torch.backends.mps.is_available() else
                 "cpu")
@@ -30,7 +31,7 @@ class Trainer2D:
         self.mlp = NeRFMLP(input_dim=2 + self.grid.get_dimensions(), hidden_dim=64)
         self.mlp = self.mlp.to(self.device)
         self.mlp = torch.jit.script(self.mlp)
-        learning_rate = 1e-3 * (batch_size / 256)
+        learning_rate = max(3e-4,1e-4 * (batch_size / 256))
         self.optimizer = optim.Adam(list(self.grid.parameters())+ list(self.mlp.parameters()), lr= learning_rate)
         image = ImagePP(path, batch_size)
         self.image_shape = image.get_image_shape()
@@ -44,12 +45,13 @@ class Trainer2D:
         features = self.grid(pos_tensor)
         mlp_input = torch.cat([pos_tensor, features], dim=1)
         output = self.mlp(mlp_input)
-        loss = torch.nn.functional.l1_loss(output[:, :3], color_tensor)
+        loss = torch.nn.functional.mse_loss(output[:, :3], color_tensor)
         return loss
 
     def epoch_iterations(self):
         for pos_tensor, color_tensor in self.batches:
             if self.device.type == "cuda":
+                #Uses float16 where possible to accelerate training.
                 with autocast(device_type="cuda", dtype=torch.float16):
                     loss = self.compute_loss(pos_tensor, color_tensor)
             else:
